@@ -1,594 +1,76 @@
-
-
-<style>
-@import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
-
-* { margin: 0; padding: 0; box-sizing: border-box; }
-
-#mc-root {
-  width: 100%;
-  min-height: 600px;
-  position: relative;
-  overflow: hidden;
-  background: #000;
-  font-family: 'VT323', monospace;
-  image-rendering: pixelated;
-}
-
-#panorama {
-  position: absolute; inset: 0;
-  background: 
-    radial-gradient(ellipse at 50% 40%, #6ab3e8 0%, #3a7fc1 30%, #1a4a7a 60%, #0a1a3a 100%);
-  animation: panSway 20s ease-in-out infinite alternate;
-}
-
-@keyframes panSway {
-  0% { filter: brightness(0.85) saturate(1.1); }
-  100% { filter: brightness(1.05) saturate(1.2); }
-}
-
-.cloud {
-  position: absolute;
-  background: rgba(255,255,255,0.15);
-  border-radius: 2px;
-  animation: cloudDrift linear infinite;
-}
-@keyframes cloudDrift {
-  from { transform: translateX(-200px); }
-  to { transform: translateX(110%); }
-}
-
-#ground-strip {
-  position: absolute;
-  bottom: 0; left: 0; right: 0;
-  height: 120px;
-  background: linear-gradient(to bottom, #3a7a2a 0%, #2d5e1e 18%, #5a3a1a 19%, #4a2e10 40%, #3a2208 100%);
-}
-
-.dirt-pixel {
-  position: absolute;
-  width: 16px; height: 16px;
-  background: #5a3a1a;
-  opacity: 0.6;
-}
-
-#title-area {
-  position: relative;
-  text-align: center;
-  padding-top: 60px;
-  z-index: 10;
-}
-
-#mc-title {
-  font-size: 72px;
-  color: #fff;
-  text-shadow:
-    4px 4px 0 #3f3f3f,
-    -1px -1px 0 #3f3f3f,
-    0 0 20px rgba(255,255,100,0.3);
-  letter-spacing: 2px;
-  line-height: 1;
-  display: inline-block;
-  animation: titleBob 3s ease-in-out infinite;
-}
-
-#mc-title .yellow { color: #ffff55; text-shadow: 3px 3px 0 #3f3f00, 0 0 20px rgba(255,255,0,0.5); }
-
-@keyframes titleBob {
-  0%, 100% { transform: translateY(0) rotate(-1deg); }
-  50% { transform: translateY(-4px) rotate(-1deg); }
-}
-
-#splash {
-  color: #ffff00;
-  font-size: 20px;
-  transform: rotate(-15deg) translateX(80px);
-  display: inline-block;
-  margin-top: -8px;
-  text-shadow: 2px 2px 0 #7f7f00;
-  animation: splashPulse 1s ease-in-out infinite alternate;
-}
-
-@keyframes splashPulse {
-  from { transform: rotate(-15deg) translateX(80px) scale(1); }
-  to { transform: rotate(-15deg) translateX(80px) scale(1.08); }
-}
-
-#menu-area {
-  position: relative;
-  z-index: 10;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  margin-top: 28px;
-}
-
-.mc-btn {
-  width: 260px;
-  padding: 10px 0;
-  font-family: 'VT323', monospace;
-  font-size: 22px;
-  color: #fff;
-  background: #848484;
-  border: none;
-  border-top: 3px solid #c8c8c8;
-  border-left: 3px solid #c8c8c8;
-  border-right: 3px solid #3f3f3f;
-  border-bottom: 3px solid #3f3f3f;
-  cursor: pointer;
-  letter-spacing: 1px;
-  text-shadow: 2px 2px #3f3f3f;
-  transition: filter 0.05s;
-  image-rendering: pixelated;
-  position: relative;
-  outline: none;
-}
-
-.mc-btn:hover {
-  filter: brightness(1.3);
-  color: #ffffa0;
-}
-
-.mc-btn:active {
-  border-top: 3px solid #3f3f3f;
-  border-left: 3px solid #3f3f3f;
-  border-right: 3px solid #c8c8c8;
-  border-bottom: 3px solid #c8c8c8;
-  filter: brightness(0.9);
-}
-
-.mc-btn-row {
-  display: flex;
-  gap: 6px;
-}
-
-.mc-btn-row .mc-btn {
-  width: 127px;
-}
-
-#version-badge {
-  position: absolute;
-  bottom: 8px;
-  left: 10px;
-  color: #fff;
-  font-size: 14px;
-  text-shadow: 1px 1px #000;
-  z-index: 10;
-  opacity: 0.8;
-}
-
-#copyright {
-  position: absolute;
-  bottom: 8px;
-  right: 10px;
-  color: #fff;
-  font-size: 14px;
-  text-shadow: 1px 1px #000;
-  z-index: 10;
-  opacity: 0.8;
-}
-
-#screen {
-  min-height: 600px;
-  position: relative;
-}
-
-#options-screen, #about-screen, #multiplayer-screen {
-  display: none;
-  position: absolute;
-  inset: 0;
-  z-index: 20;
-  background: rgba(0,0,0,0.85);
-  flex-direction: column;
-  align-items: center;
-  padding-top: 40px;
-}
-
-#options-screen.active, #about-screen.active, #multiplayer-screen.active {
-  display: flex;
-}
-
-.screen-title {
-  font-family: 'VT323', monospace;
-  color: #fff;
-  font-size: 36px;
-  text-shadow: 2px 2px #3f3f3f;
-  margin-bottom: 20px;
-  letter-spacing: 2px;
-}
-
-.option-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 10px;
-  width: 400px;
-}
-
-.option-label {
-  font-family: 'VT323', monospace;
-  color: #fff;
-  font-size: 20px;
-  width: 160px;
-  text-shadow: 1px 1px #000;
-}
-
-.option-slider {
-  flex: 1;
-  -webkit-appearance: none;
-  height: 8px;
-  background: #555;
-  border: 2px solid #3f3f3f;
-  outline: none;
-  cursor: pointer;
-}
-
-.option-slider::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  width: 16px; height: 20px;
-  background: #aaa;
-  border: 2px solid #fff;
-  cursor: pointer;
-}
-
-.option-val {
-  font-family: 'VT323', monospace;
-  color: #fff;
-  font-size: 20px;
-  width: 50px;
-  text-align: right;
-  text-shadow: 1px 1px #000;
-}
-
-.toggle-btn {
-  font-family: 'VT323', monospace;
-  font-size: 18px;
-  padding: 6px 18px;
-  background: #848484;
-  border: none;
-  border-top: 2px solid #c8c8c8;
-  border-left: 2px solid #c8c8c8;
-  border-right: 2px solid #3f3f3f;
-  border-bottom: 2px solid #3f3f3f;
-  color: #fff;
-  cursor: pointer;
-  letter-spacing: 1px;
-}
-
-.toggle-btn:hover { filter: brightness(1.3); color: #ffffa0; }
-
-.toggle-btn.on { color: #55ff55; }
-.toggle-btn.off { color: #ff5555; }
-
-#audio-indicator {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  z-index: 30;
-  font-family: 'VT323', monospace;
-  font-size: 14px;
-  color: rgba(255,255,255,0.6);
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  cursor: pointer;
-}
-
-#audio-indicator:hover { color: #fff; }
-
-.note-anim {
-  animation: floatNote 2s ease-in-out infinite;
-  display: inline-block;
-}
-
-@keyframes floatNote {
-  0%, 100% { transform: translateY(0); opacity: 0.6; }
-  50% { transform: translateY(-4px); opacity: 1; }
-}
-
-.mc-divider {
-  width: 400px;
-  height: 2px;
-  background: rgba(255,255,255,0.1);
-  margin: 10px 0;
-}
-
-.server-card {
-  width: 400px;
-  background: rgba(0,0,0,0.5);
-  border: 1px solid #555;
-  padding: 10px 14px;
-  margin-bottom: 8px;
-  font-family: 'VT323', monospace;
-  color: #aaa;
-  font-size: 18px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.server-card:hover { background: rgba(255,255,255,0.08); color: #fff; }
-
-.server-dot {
-  width: 10px; height: 10px;
-  border-radius: 50%;
-  background: #55ff55;
-  flex-shrink: 0;
-}
-
-.server-dot.offline { background: #ff5555; }
-
-#auto-update-bar {
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  background: rgba(0,100,0,0.85);
-  color: #55ff55;
-  font-family: 'VT323', monospace;
-  font-size: 16px;
-  padding: 6px 14px;
-  z-index: 100;
-  display: none;
-  align-items: center;
-  gap: 10px;
-}
-
-#update-progress {
-  height: 6px;
-  background: #55ff55;
-  transition: width 0.3s;
-  border-radius: 2px;
-}
-
-#update-track {
-  flex: 1;
-  height: 6px;
-  background: #1a4a1a;
-  border-radius: 2px;
-  overflow: hidden;
-}
-</style>
-
-<div id="mc-root">
-  <div id="auto-update-bar">
-    <span id="update-text">⬇ Checking for updates...</span>
-    <div id="update-track"><div id="update-progress" style="width:0%"></div></div>
-    <span id="update-pct">0%</span>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BrowserCraft</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; overflow: hidden; background: #000; }
+    #app { width: 100%; height: 100%; position: relative; }
+    /* Loading splash before JS boots */
+    #boot-splash {
+      position: fixed; inset: 0;
+      background: #000;
+      display: flex; align-items: center; justify-content: center;
+      flex-direction: column;
+      gap: 16px;
+      font-family: monospace; color: #555; font-size: 14px;
+      z-index: 9999;
+      transition: opacity 0.5s;
+    }
+    #boot-splash.hidden { opacity: 0; pointer-events: none; }
+    #boot-logo {
+      font-size: 48px; color: #fff;
+      text-shadow: 3px 3px 0 #333;
+      letter-spacing: 4px;
+    }
+    #boot-logo span { color: #ffff55; }
+    #boot-bar-track {
+      width: 300px; height: 6px;
+      background: #222; border-radius: 3px; overflow: hidden;
+    }
+    #boot-bar {
+      height: 100%; width: 0%;
+      background: #55ff55;
+      transition: width 0.3s;
+      border-radius: 3px;
+    }
+  </style>
+</head>
+<body>
+  <!-- Boot splash — hidden once JS is ready -->
+  <div id="boot-splash">
+    <div id="boot-logo">Browser<span>Craft</span></div>
+    <div id="boot-bar-track"><div id="boot-bar"></div></div>
+    <div id="boot-status">Loading…</div>
   </div>
 
-  <div id="audio-indicator" onclick="toggleAudio()">
-    <span class="note-anim">♪</span>
-    <span id="audio-label">Music: ON</span>
-  </div>
+  <!-- Main app container — all screens render here -->
+  <div id="app"></div>
 
-  <div id="screen">
-    <div id="panorama">
-      <div class="cloud" style="width:120px;height:24px;top:18%;animation-duration:28s;animation-delay:0s;left:-200px"></div>
-      <div class="cloud" style="width:80px;height:16px;top:25%;animation-duration:22s;animation-delay:-8s;left:-200px"></div>
-      <div class="cloud" style="width:160px;height:20px;top:12%;animation-duration:35s;animation-delay:-14s;left:-200px"></div>
-      <div class="cloud" style="width:60px;height:14px;top:32%;animation-duration:18s;animation-delay:-4s;left:-200px"></div>
-    </div>
-    <div id="ground-strip"></div>
+  <!-- Boot progress animation (pure CSS, no JS needed) -->
+  <script>
+    (function () {
+      const bar    = document.getElementById('boot-bar');
+      const status = document.getElementById('boot-status');
+      let p = 0;
+      const steps  = ['Loading engine…', 'Preparing assets…', 'Starting client…', 'Ready!'];
+      let step = 0;
+      const iv = setInterval(() => {
+        p = Math.min(p + 4, 95);
+        bar.style.width = p + '%';
+        if (p > step * 25 && step < steps.length) status.textContent = steps[step++];
+      }, 60);
+      window.__bootDone = function () {
+        clearInterval(iv);
+        bar.style.width = '100%';
+        status.textContent = 'Ready!';
+        setTimeout(() => { document.getElementById('boot-splash').classList.add('hidden'); }, 400);
+      };
+    })();
+  </script>
 
-    <div id="title-area">
-      <div>
-        <span id="mc-title">Mine<span class="yellow">craft</span></span>
-      </div>
-      <div>
-        <span id="splash">Now in your browser!</span>
-      </div>
-    </div>
-
-    <div id="menu-area">
-      <button class="mc-btn" onclick="showScreen('singleplayer')">Singleplayer</button>
-      <button class="mc-btn" onclick="showScreen('multiplayer-screen')">Multiplayer</button>
-      <button class="mc-btn" onclick="showScreen('options-screen')">Options</button>
-      <div class="mc-btn-row">
-        <button class="mc-btn" onclick="showScreen('about-screen')">About</button>
-        <button class="mc-btn" onclick="triggerUpdate()">Check Updates</button>
-      </div>
-      <button class="mc-btn" onclick="quitGame()" style="background:#6a4848;border-top-color:#a07070;border-left-color:#a07070">Quit Game</button>
-    </div>
-
-    <div id="version-badge">BrowserCraft v0.1.0 — Alpha</div>
-    <div id="copyright">© 2026 Your Studio</div>
-  </div>
-
-  <div id="options-screen">
-    <div class="screen-title">Options</div>
-    <div class="option-row">
-      <span class="option-label">Music Vol.</span>
-      <input type="range" class="option-slider" min="0" max="100" value="70" id="music-vol" oninput="setMusicVol(this.value)">
-      <span class="option-val" id="music-vol-val">70%</span>
-    </div>
-    <div class="option-row">
-      <span class="option-label">Sound Vol.</span>
-      <input type="range" class="option-slider" min="0" max="100" value="80">
-      <span class="option-val">80%</span>
-    </div>
-    <div class="option-row">
-      <span class="option-label">FOV</span>
-      <input type="range" class="option-slider" min="60" max="110" value="70" oninput="this.nextElementSibling.textContent=this.value+'°'">
-      <span class="option-val">70°</span>
-    </div>
-    <div class="option-row">
-      <span class="option-label">Render Dist.</span>
-      <input type="range" class="option-slider" min="2" max="16" value="8" oninput="this.nextElementSibling.textContent=this.value+' ch'">
-      <span class="option-val">8 ch</span>
-    </div>
-    <div class="mc-divider"></div>
-    <div class="option-row">
-      <span class="option-label">Fullscreen</span>
-      <button class="toggle-btn off" id="fs-btn" onclick="toggleOpt(this)">OFF</button>
-    </div>
-    <div class="option-row">
-      <span class="option-label">V-Sync</span>
-      <button class="toggle-btn on" id="vs-btn" onclick="toggleOpt(this)">ON</button>
-    </div>
-    <div class="option-row">
-      <span class="option-label">Auto Update</span>
-      <button class="toggle-btn on" id="au-btn" onclick="toggleOpt(this)">ON</button>
-    </div>
-    <div class="option-row">
-      <span class="option-label">Particles</span>
-      <button class="toggle-btn on" id="pt-btn" onclick="toggleOpt(this)">ON</button>
-    </div>
-    <div class="mc-divider"></div>
-    <button class="mc-btn" style="width:260px" onclick="closeScreens()">Done</button>
-  </div>
-
-  <div id="multiplayer-screen">
-    <div class="screen-title">Multiplayer</div>
-    <div class="server-card">
-      <div class="server-dot"></div>
-      <div>
-        <div style="color:#fff;font-size:20px">Hypixel</div>
-        <div style="font-size:15px">mc.hypixel.net — 50,000 online</div>
-      </div>
-    </div>
-    <div class="server-card">
-      <div class="server-dot"></div>
-      <div>
-        <div style="color:#fff;font-size:20px">Local Server</div>
-        <div style="font-size:15px">localhost:25565 — 1 online</div>
-      </div>
-    </div>
-    <div class="server-card">
-      <div class="server-dot offline"></div>
-      <div>
-        <div style="color:#aaa;font-size:20px">My Friend's Server</div>
-        <div style="font-size:15px">Offline</div>
-      </div>
-    </div>
-    <div class="mc-divider"></div>
-    <div class="mc-btn-row" style="display:flex;gap:6px;margin-top:4px">
-      <button class="mc-btn" style="width:127px">Add Server</button>
-      <button class="mc-btn" style="width:127px" onclick="closeScreens()">Back</button>
-    </div>
-  </div>
-
-  <div id="about-screen">
-    <div class="screen-title">About BrowserCraft</div>
-    <div style="font-family:'VT323',monospace;color:#aaa;font-size:18px;max-width:380px;text-align:center;line-height:1.6">
-      BrowserCraft is an original Minecraft-protocol compatible browser client.<br><br>
-      <span style="color:#55ff55">✔ Auto-updating via Mojang endpoints</span><br>
-      <span style="color:#55ff55">✔ Full registry sync (blocks, entities, items)</span><br>
-      <span style="color:#55ff55">✔ WebGL renderer</span><br>
-      <span style="color:#55ff55">✔ WebSocket ↔ TCP proxy</span><br><br>
-      <span style="color:#ffff55">Version manifest: checking...</span><br>
-      <span id="latest-ver" style="color:#55ffff">Latest MC: loading...</span>
-    </div>
-    <div class="mc-divider" style="margin-top:20px"></div>
-    <button class="mc-btn" style="width:260px;margin-top:10px" onclick="closeScreens()">Back</button>
-  </div>
-</div>
-
-<audio id="bg-music" loop>
-  <source src="https://www.minecraft.net/content/dam/games/minecraft/music/music_main_menu.mp3" type="audio/mpeg">
-</audio>
-
-<script>
-const splashes = [
-  "Now in your browser!",
-  "100% original code!",
-  "Auto-updating!",
-  "WebGL powered!",
-  "Connects to real servers!",
-  "No Java required!",
-  "Open source!",
-  "Built from scratch!",
-  "Fully self-updating!",
-];
-
-document.getElementById('splash').textContent = splashes[Math.floor(Math.random() * splashes.length)];
-
-let audioOn = false;
-const music = document.getElementById('bg-music');
-
-function toggleAudio() {
-  audioOn = !audioOn;
-  if (audioOn) {
-    music.volume = 0.5;
-    music.play().catch(() => {});
-    document.getElementById('audio-label').textContent = 'Music: ON';
-  } else {
-    music.pause();
-    document.getElementById('audio-label').textContent = 'Music: OFF';
-  }
-}
-
-function setMusicVol(v) {
-  document.getElementById('music-vol-val').textContent = v + '%';
-  music.volume = v / 100;
-}
-
-function showScreen(id) {
-  if (id === 'singleplayer') {
-    sendPrompt('The user clicked Singleplayer. What world selection / world creation screen should we build next?');
-    return;
-  }
-  closeScreens();
-  const el = document.getElementById(id);
-  if (el) el.classList.add('active');
-}
-
-function closeScreens() {
-  ['options-screen','about-screen','multiplayer-screen'].forEach(id => {
-    document.getElementById(id).classList.remove('active');
-  });
-}
-
-function toggleOpt(btn) {
-  const isOn = btn.textContent === 'ON';
-  btn.textContent = isOn ? 'OFF' : 'ON';
-  btn.className = 'toggle-btn ' + (isOn ? 'off' : 'on');
-}
-
-function quitGame() {
-  sendPrompt('User clicked Quit Game. Show a funny Minecraft-style "Are you sure?" dialog idea.');
-}
-
-async function triggerUpdate() {
-  const bar = document.getElementById('auto-update-bar');
-  const prog = document.getElementById('update-progress');
-  const txt = document.getElementById('update-text');
-  const pct = document.getElementById('update-pct');
-  bar.style.display = 'flex';
-
-  txt.textContent = '⬇ Fetching version manifest...';
-  let p = 0;
-  const tick = setInterval(() => {
-    p = Math.min(p + 2, 90);
-    prog.style.width = p + '%';
-    pct.textContent = p + '%';
-  }, 80);
-
-  try {
-    const r = await fetch('https://piston-meta.mojang.com/mc/game/version_manifest_v2.json');
-    const d = await r.json();
-    clearInterval(tick);
-    prog.style.width = '100%';
-    pct.textContent = '100%';
-    const latest = d.latest.release;
-    txt.textContent = '✔ Up to date! Latest MC: ' + latest;
-    document.getElementById('latest-ver').textContent = 'Latest MC: ' + latest;
-    document.getElementById('version-badge').textContent = 'BrowserCraft v0.1.0 — MC ' + latest + ' data';
-    setTimeout(() => { bar.style.display = 'none'; prog.style.width = '0%'; }, 3500);
-  } catch(e) {
-    clearInterval(tick);
-    txt.textContent = '✖ Could not reach Mojang servers.';
-    setTimeout(() => { bar.style.display = 'none'; prog.style.width = '0%'; }, 3000);
-  }
-}
-
-(async () => {
-  try {
-    const r = await fetch('https://piston-meta.mojang.com/mc/game/version_manifest_v2.json');
-    const d = await r.json();
-    document.getElementById('latest-ver').textContent = 'Latest MC: ' + d.latest.release + ' (' + d.latest.snapshot + ')';
-  } catch(e) {
-    document.getElementById('latest-ver').textContent = 'Latest MC: offline';
-  }
-})();
-</script>
+  <script src="bundle.js"></script>
+</body>
+</html>
