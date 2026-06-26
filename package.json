@@ -15,7 +15,7 @@
     "prismarine-auth":     "^2.6.0",
     "prismarine-viewer":   "^1.28.0",
     "mineflayer":          "^4.23.0",
-    "prismarine-proxy":    "^1.4.0",
+    "prismarine-proxy":    "^1.2.0",
     "minecraft-data":      "^3.65.0",
     "express":             "^4.19.2",
     "ws":                  "^8.18.0",
