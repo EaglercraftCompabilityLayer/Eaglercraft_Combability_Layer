@@ -1,4 +1,4 @@
-# BrowserCraft — Architecture Blueprint
+# Eaglercraft Compability Layer/Minecraft: Web Edition — Architecture Blueprint
 
 ## Overview
 
