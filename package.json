@@ -41,7 +41,11 @@
     "crypto-browserify":   "^3.12.0",
     "assert":              "^2.1.0",
     "events":              "^3.3.0",
-    "process":             "^0.11.10"
+    "process":             "^0.11.10",
+    "os-browserify":       "^0.3.0",
+    "util":                "^0.12.5",
+    "url":                 "^0.11.4",
+    "constants-browserify": "^1.0.0"
   },
   "engines": {
     "node": ">=18.0.0"
