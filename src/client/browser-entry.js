@@ -1,120 +1,155 @@
 /**
  * BrowserCraft — Browser Entry Point
  * ────────────────────────────────────
- * This is the client-side JS bundle entry.
- * Webpack packs this + all imports → public/bundle.js
- *
- * Responsibilities:
- *   • Boot the main menu UI
- *   • Manage screen navigation (mainMenu → worldSelect → game)
- *   • Connect to the server-side updater via REST
- *   • Open a WebSocket proxy connection when the user joins a server
- *   • Hand off to the WebGL renderer once in-game
+ * Webpack entry → public/bundle.js
+ * Boots the client: main menu, screen navigation, WS proxy connection.
  */
 
-'use strict';
-
-import { MainMenu }     from './screens/MainMenu.js';
-import { OptionsScreen } from './screens/OptionsScreen.js';
-import { WorldSelect }  from './screens/WorldSelect.js';
+import { MainMenu }          from './screens/MainMenu.js';
+import { OptionsScreen }     from './screens/OptionsScreen.js';
+import { WorldSelect }       from './screens/WorldSelect.js';
 import { MultiplayerScreen } from './screens/MultiplayerScreen.js';
-import { AudioManager } from './audio/AudioManager.js';
-import { UpdaterClient } from './updater/UpdaterClient.js';
+import { AudioManager }      from './audio/AudioManager.js';
+import { UpdaterClient }     from './updater/UpdaterClient.js';
 
-// ── Global state ────────────────────────────────────────────────────────────
+// ── Global state ─────────────────────────────────────────────────────────────
 window.BrowserCraft = {
-  version:      __VERSION__,            // injected by webpack DefinePlugin
-  mcVersion:    null,                   // set after updater finishes
+  version:       typeof __VERSION__ !== 'undefined' ? __VERSION__ : '0.1.0',
+  mcVersion:     null,
   currentScreen: null,
-  audio:        null,
-  ws:           null,
+  audio:         null,
+  ws:            null,
+  game:          null,
 };
 
-// ── Boot ────────────────────────────────────────────────────────────────────
+// ── Boot ──────────────────────────────────────────────────────────────────────
 async function boot () {
   const BC = window.BrowserCraft;
 
-  // 1. Start background music
+  // 1. Audio
   BC.audio = new AudioManager();
   BC.audio.playMenuMusic();
 
-  // 2. Check for game data updates
+  // 2. Updater — fire and forget, updates mcVersion when done
   const updater = new UpdaterClient();
-  updater.on('update-complete', ({ version }) => {
-    BC.mcVersion = version;
-    console.log(`[Client] Game data synced to MC ${version}`);
+  updater.on('update-complete', (data) => {
+    BC.mcVersion = data.version;
+    console.log('[Client] Game data synced to MC', data.version);
   });
-  updater.check();
+  updater.check().catch(() => {
+    // Offline or server not running — fine for static deploy
+    console.log('[Client] Updater offline — using cached data');
+  });
 
-  // 3. Render main menu
-  const menu = new MainMenu({
-    onSingleplayer:  () => showScreen(new WorldSelect({ onBack: () => showScreen(menu) })),
-    onMultiplayer:   () => showScreen(new MultiplayerScreen({
+  // 3. Build screen factory functions (avoids circular ref issues)
+  const makeMenu = () => new MainMenu({
+    onSingleplayer: () => showScreen(new WorldSelect({
+      onBack:      () => showScreen(makeMenu()),
+      onJoinWorld: (world) => handleJoinWorld(world),
+    })),
+    onMultiplayer: () => showScreen(new MultiplayerScreen({
+      onBack:    () => showScreen(makeMenu()),
       onConnect: (host, port) => connectToServer(host, port),
-      onBack:    () => showScreen(menu),
     })),
-    onOptions:       () => showScreen(new OptionsScreen({
+    onOptions: () => showScreen(new OptionsScreen({
       audio:  BC.audio,
-      onBack: () => showScreen(menu),
+      onBack: () => showScreen(makeMenu()),
     })),
-    onCheckUpdates:  () => updater.check({ force: true }),
-    onQuit:          () => showQuitDialog(),
+    onCheckUpdates: () => updater.check({ force: true }).catch(() => {}),
+    onQuit:         () => showQuitDialog(),
   });
 
-  showScreen(menu);
+  showScreen(makeMenu());
+
+  // Signal boot splash to hide
+  if (typeof window.__bootDone === 'function') window.__bootDone();
 }
 
+// ── Screen management ─────────────────────────────────────────────────────────
 function showScreen (screen) {
-  if (window.BrowserCraft.currentScreen?.destroy) {
-    window.BrowserCraft.currentScreen.destroy();
-  }
-  window.BrowserCraft.currentScreen = screen;
-  screen.mount(document.getElementById('app'));
+  const BC  = window.BrowserCraft;
+  const app = document.getElementById('app');
+  if (!app) return;
+
+  // Destroy previous screen
+  try { BC.currentScreen?.destroy?.(); } catch (e) {}
+
+  // Clear container
+  app.innerHTML = '';
+
+  BC.currentScreen = screen;
+  screen.mount(app);
 }
 
-// ── Server connection ────────────────────────────────────────────────────────
-async function connectToServer (host, port) {
+// ── Singleplayer world join ───────────────────────────────────────────────────
+function handleJoinWorld (world) {
+  console.log('[Client] Joining world:', world.name, 'seed:', world.seed);
+  // TODO: boot Artenos generator + renderer for singleplayer
+  // For now show a placeholder
+  const app = document.getElementById('app');
+  app.innerHTML = `
+    <div style="position:absolute;inset:0;background:#87ceeb;display:flex;align-items:center;justify-content:center;flex-direction:column;font-family:VT323,monospace;color:#fff;font-size:28px;text-shadow:2px 2px #000;">
+      <div>Loading world: ${world.name}</div>
+      <div style="font-size:16px;margin-top:8px;color:#ddd;">Seed: ${world.seed} · ${world.type} · ${world.gamemode}</div>
+      <button onclick="location.reload()" style="margin-top:24px;font-family:VT323,monospace;font-size:22px;padding:10px 28px;background:#848484;border:none;border-top:3px solid #c8c8c8;border-left:3px solid #c8c8c8;border-right:3px solid #3f3f3f;border-bottom:3px solid #3f3f3f;color:#fff;cursor:pointer;">Back to Menu</button>
+    </div>`;
+}
+
+// ── Multiplayer server connection ─────────────────────────────────────────────
+function connectToServer (host, port) {
   const BC = window.BrowserCraft;
 
-  // Determine WebSocket URL (same origin)
-  const wsUrl = `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/proxy`;
-  BC.ws = new WebSocket(wsUrl);
+  // BrowserCraft server must be running for WS proxy
+  // On static-only deploy (Cloudflare Pages) this will fail gracefully
+  const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+  const wsUrl = `${proto}://${location.host}/proxy`;
 
-  BC.ws.onopen = () => {
-    // Send handshake
-    BC.ws.send(JSON.stringify({
+  console.log('[Client] Connecting to', host, port, 'via', wsUrl);
+
+  let ws;
+  try {
+    ws = new WebSocket(wsUrl);
+  } catch (e) {
+    alert('WebSocket proxy not available on static deploy.\nRun the BrowserCraft Node.js server locally to connect to real MC servers.');
+    return;
+  }
+
+  BC.ws = ws;
+
+  ws.onopen = () => {
+    ws.send(JSON.stringify({
       host,
-      port,
-      version:  BC.mcVersion || '1.21.4',
-      username: localStorage.getItem('bc_username') || 'Player',
+      port:    Number(port),
+      version: BC.mcVersion || '1.21.4',
+      username: localStorage.getItem('bc_username') || 'BrowserCraft',
     }));
+    console.log('[WS] Connected — handshake sent');
   };
 
-  BC.ws.onmessage = (evt) => {
-    // Split header line from packet bytes
-    const raw  = evt.data instanceof ArrayBuffer ? evt.data : null;
-    if (!raw) return;
-    // Route to renderer / game logic
-    window.BrowserCraft.game?.onPacket(raw);
+  ws.onmessage = (evt) => {
+    BC.game?.onPacket?.(evt.data);
   };
 
-  BC.ws.onclose = (e) => {
-    console.log(`[WS] Disconnected: ${e.code} ${e.reason}`);
-    window.BrowserCraft.game?.onDisconnect(e.reason);
+  ws.onclose = (e) => {
+    console.log('[WS] Disconnected:', e.code, e.reason);
+    BC.game?.onDisconnect?.(e.reason);
   };
 
-  BC.ws.onerror = (e) => {
-    console.error('[WS] Error', e);
+  ws.onerror = () => {
+    alert('Could not connect to BrowserCraft proxy server.\nMake sure the Node.js server is running.');
   };
 }
 
-// ── Quit dialog ──────────────────────────────────────────────────────────────
+// ── Quit ──────────────────────────────────────────────────────────────────────
 function showQuitDialog () {
-  // Placeholder — will be a proper MC-style modal
-  if (confirm('Are you sure you want to quit?\n\n(Are you really sure? This is a browser. Just close the tab.)')) {
+  if (confirm('Quit BrowserCraft?\n\n(It\'s a browser tab. You can just close it 😄)')) {
     window.close();
   }
 }
 
-// ── Start ────────────────────────────────────────────────────────────────────
-window.addEventListener('DOMContentLoaded', boot);
+// ── Start on DOM ready ────────────────────────────────────────────────────────
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', boot);
+} else {
+  boot();
+}
