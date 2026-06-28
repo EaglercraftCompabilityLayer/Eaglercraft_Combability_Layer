@@ -6,7 +6,6 @@
 
 const path    = require('path');
 const webpack = require('webpack');
-const HtmlWebpackPlugin = require('html-webpack-plugin');
 
 module.exports = (env, argv) => {
   const isDev = argv?.mode === 'development';
@@ -16,7 +15,6 @@ module.exports = (env, argv) => {
     output: {
       path:     path.resolve(__dirname, 'public'),
       filename: 'bundle.js',
-      clean:    true, // Automatically clears the public folder before generating a new build
     },
     mode:    isDev ? 'development' : 'production',
     devtool: isDev ? 'eval-source-map' : false,
@@ -47,12 +45,6 @@ module.exports = (env, argv) => {
       }),
       new webpack.DefinePlugin({
         'process.env.BROWSER': JSON.stringify(true),
-      }),
-      // Generates and injects bundle.js script into the final public/index.html
-      new HtmlWebpackPlugin({
-        template: './src/client/index.html', // Assumes index.html sits next to your entry file
-        // Optional: If you don't have a template file yet, uncomment the line below to let Webpack auto-generate a blank base page
-        // title: 'BrowserCraft' 
       }),
     ],
 
