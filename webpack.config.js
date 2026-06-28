@@ -21,7 +21,6 @@ module.exports = (env, argv) => {
 
     resolve: {
       fallback: {
-        // Node core modules needed by Prismarine in the browser
         buffer:        require.resolve('buffer/'),
         stream:        require.resolve('stream-browserify'),
         crypto:        require.resolve('crypto-browserify'),
@@ -30,11 +29,16 @@ module.exports = (env, argv) => {
         events:        require.resolve('events/'),
         util:          require.resolve('util/'),
         assert:        require.resolve('assert/'),
+        url:           require.resolve('url/'),
+        constants:     require.resolve('constants-browserify'),
         net:           false,
         tls:           false,
         fs:            false,
         child_process: false,
         dns:           false,
+        http:          false,
+        https:         false,
+        zlib:          false,
       },
     },
 
@@ -45,6 +49,7 @@ module.exports = (env, argv) => {
       }),
       new webpack.DefinePlugin({
         'process.env.BROWSER': JSON.stringify(true),
+        '__VERSION__':         JSON.stringify('0.1.0'),
       }),
     ],
 
@@ -72,6 +77,11 @@ module.exports = (env, argv) => {
       proxy:   [
         { context: ['/api', '/proxy'], target: 'http://localhost:8081', ws: true },
       ],
+    },
+
+    // Suppress massive bundle size warnings from prismarine
+    performance: {
+      hints: false,
     },
   };
 };
