@@ -7,7 +7,7 @@
     "start":       "node src/server/index.js",
     "dev":         "nodemon src/server/index.js",
     "build":       "webpack --config webpack.config.js --mode production && cp index.html public/",
-    "build:dev":   "webpack --config webpack.config.js --mode development --watch",
+    "build:dev":   "webpack --config webpack.config.js --mode development --watch && cp index.html public/",
     "update-data": "node src/client/updater/sync.js"
   },
   "dependencies": {
